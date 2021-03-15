@@ -37,6 +37,8 @@ class MujocoXML(object):
         # Parse any default classes and replace them inline
         default = self.create_default_element("default")
         default_classes = self._get_default_classes(default)
+        #print("fname: ", fname)
+        #print("default classes: ", default_classes)
         self._replace_defaults_inline(default_dic=default_classes)
 
         self.resolve_asset_dependency()
@@ -210,6 +212,12 @@ class MujocoXML(object):
         # Parse the default tag accordingly
         for cls in default:
             default_dic[cls.get("class")] = {child.tag: child for child in cls}
+            for child in cls:
+                if child.tag == "default":
+                    for sub in child:
+                        default_dic[child.attrib.pop("class")] = {sub.tag: sub for sub in child}
+        keys = default_dic.keys()
+
         return default_dic
 
     def _replace_defaults_inline(self, default_dic, root=None):
@@ -231,11 +239,20 @@ class MujocoXML(object):
         if cls_name is not None:
             # If the tag for this element is contained in our default dic, we add any defaults that are not
             # explicitly specified in this
+            # print("cls_name: ", cls_name)
             tag_attrs = default_dic[cls_name].get(root.tag, None)
             if tag_attrs is not None:
+                # print("tag_attrs: ", tag_attrs)
+                # print("items: ", tag_attrs.items())
                 for k, v in tag_attrs.items():
                     if root.get(k, None) is None:
                         root.set(k, v)
+                        """
+                        print("k, v: ")
+                        print(k)
+                        print(v)
+                        print("---")
+                        """
         # Loop through all child elements
         for child in root:
             self._replace_defaults_inline(default_dic=default_dic, root=child)
